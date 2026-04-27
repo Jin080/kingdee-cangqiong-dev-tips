@@ -102,15 +102,17 @@ powershell -ExecutionPolicy Bypass -Command "& {
 普通同事的投稿只允许放到：
 
 ```text
-contributions/YYYY-MM/
+contributions/YYYY-MM-DD/
 ```
 
 示例：
 
 ```text
-contributions/2026-04/2026-04-27-zhangsan-f7-parent-child.md
-contributions/2026-04/2026-04-27-lisi-save-plugin.md
+contributions/2026-04-30/f7-parent-child.md
+contributions/2026-04-30/save-plugin.md
 ```
+
+文件名不强制统一格式，只要能看出主题即可。
 
 不要把实际投稿内容放到：
 
@@ -129,7 +131,7 @@ contributions/2026-04/2026-04-27-lisi-save-plugin.md
 1. 打开仓库网页
 2. 进入 `templates/contribution-template.md`
 3. 复制模板内容
-4. 在 `contributions/YYYY-MM/` 下新建一个 `.md`
+4. 在 `contributions/YYYY-MM-DD/` 下新建一个 `.md`
 5. 选择 `Create a new branch for this commit and start a pull request`
 6. 提交 PR 到 `develop`
 
