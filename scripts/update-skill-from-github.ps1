@@ -10,9 +10,13 @@ $ErrorActionPreference = "Stop"
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $installScript = Join-Path $scriptDir "install-skill-from-github.ps1"
+$tempInstallScript = $null
 
 if (-not (Test-Path -LiteralPath $installScript)) {
-    throw "Install script not found: $installScript"
+    $tempInstallScript = Join-Path $env:TEMP ("install-skill-from-github-" + [System.Guid]::NewGuid().ToString("N") + ".ps1")
+    $installScriptUrl = "https://raw.githubusercontent.com/$RepoOwner/$RepoName/$Branch/scripts/install-skill-from-github.ps1"
+    Invoke-WebRequest -Uri $installScriptUrl -OutFile $tempInstallScript
+    $installScript = $tempInstallScript
 }
 
 $arguments = @(
@@ -31,4 +35,8 @@ if ($SkillRoot) {
 
 if ($LASTEXITCODE -ne 0) {
     throw "Update script failed"
+}
+
+if ($tempInstallScript -and (Test-Path -LiteralPath $tempInstallScript)) {
+    Remove-Item -Force -LiteralPath $tempInstallScript
 }

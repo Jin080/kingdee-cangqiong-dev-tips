@@ -4,7 +4,7 @@
 
 这个仓库把“正式发布版 skill”和“团队投稿内容”分开管理：
 
-- `skill/kingdee-cangqiong-dev-tips/`：正式发布版 skill，普通同事本地只使用这个目录中的内容
+- `skill/`：正式发布版 skill 目录，下面可以放多个正式 skill，普通同事本地真正使用的就是这里的内容
 - `contributions/`：同事提交的原始经验，维护人每周整理
 - `templates/`：投稿模板
 - `scripts/`：安装和更新正式版 skill 的脚本
@@ -59,7 +59,7 @@
 
 普通同事本地只需要安装正式版 skill，不需要 clone 整个仓库。
 
-执行下面命令即可从 GitHub 下载 `main` 分支中的正式 skill，并安装到本机 Codex skills 目录：
+执行下面命令即可从 GitHub 下载 `main` 分支中的全部正式 skill，并安装到本机 Codex skills 目录：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -Command "& {
@@ -72,8 +72,10 @@ powershell -ExecutionPolicy Bypass -Command "& {
 默认安装到：
 
 ```text
-C:\Users\你的用户名\.codex\skills\kingdee-cangqiong-dev-tips
+C:\Users\你的用户名\.codex\skills\
 ```
+
+脚本会把仓库 `skill/` 目录下的所有正式 skill 同步到这个目录中。
 
 ## 普通同事：后续更新正式 skill
 
@@ -87,7 +89,7 @@ powershell -ExecutionPolicy Bypass -Command "& {
 }"
 ```
 
-这个更新流程只会同步：
+这个更新流程只会同步仓库 `skill/` 目录下的全部正式 skill，例如：
 
 - `skill/kingdee-cangqiong-dev-tips/`
 
@@ -96,6 +98,8 @@ powershell -ExecutionPolicy Bypass -Command "& {
 - `contributions/`
 - `templates/`
 - `README.md`
+
+如果你希望同事直接双击更新，也可以把仓库根目录中的 `更新skill.bat` 发给他们使用。
 
 ## 投稿目录规范
 
@@ -141,7 +145,7 @@ contributions/2026-04-30/save-plugin.md
 
 1. 查看 `develop` 上本周新增投稿
 2. 去重、合并相同问题、删除一次性项目噪音
-3. 把可复用结论整理进 `skill/kingdee-cangqiong-dev-tips/`
+3. 把可复用结论整理进对应的正式 skill 目录，并同步更新该 skill 的索引
 4. 发起 PR 合并到 `main`
 5. 通知团队执行更新命令
 
