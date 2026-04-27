@@ -96,6 +96,12 @@ powershell -ExecutionPolicy Bypass -Command "& {
 - `templates/`
 - `README.md`
 
+如果你希望同事直接双击更新，也可以把仓库根目录中的：
+
+- `更新skill.bat`
+
+单独发给他们。这个 `.bat` 文件会自动下载最新更新脚本并执行。
+
 ## 投稿目录规范
 
 普通同事的投稿只允许放到：
