@@ -1,6 +1,6 @@
 # kingdee-cangqiong-dev-tips
 
-团队协作维护的金蝶苍穹 / BOS 开发 skill 仓库。
+团队协作维护的多 skill 仓库，当前以金蝶苍穹 / BOS 开发和 AI 编码协作为主。
 
 这个仓库把“正式发布版 skill”和“团队投稿内容”分开管理：
 
@@ -9,6 +9,11 @@
 - `templates/`：投稿模板
 - `scripts/`：安装和更新正式版 skill 的脚本
 - `贡献审核与整合规则.md`：维护人审核投稿和整合正式 skill 的仓库级规则，不属于 skill 本体
+
+当前正式 skill：
+
+- `skill/kingdee-cangqiong-dev-tips/`：金蝶苍穹 / BOS 开发知识
+- `skill/ai-coding-discipline/`：AI 编码纪律、最小改动、验证闭环、review / debug 过程约束
 
 ## 协作模型
 
@@ -92,6 +97,7 @@ powershell -ExecutionPolicy Bypass -Command "& {
 这个更新流程只会同步仓库 `skill/` 目录下的全部正式 skill，例如：
 
 - `skill/kingdee-cangqiong-dev-tips/`
+- `skill/ai-coding-discipline/`
 
 不会把下面这些目录安装到 Codex skills 目录：
 
