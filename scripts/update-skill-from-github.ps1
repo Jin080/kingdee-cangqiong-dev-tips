@@ -14,7 +14,8 @@ $tempInstallScript = $null
 
 if (-not (Test-Path -LiteralPath $installScript)) {
     $tempInstallScript = Join-Path $env:TEMP ("install-skill-from-github-" + [System.Guid]::NewGuid().ToString("N") + ".ps1")
-    $installScriptUrl = "https://raw.githubusercontent.com/$RepoOwner/$RepoName/$Branch/scripts/install-skill-from-github.ps1"
+    $cacheBust = [System.Guid]::NewGuid().ToString("N")
+    $installScriptUrl = "https://raw.githubusercontent.com/$RepoOwner/$RepoName/$Branch/scripts/install-skill-from-github.ps1?cacheBust=$cacheBust"
     Invoke-WebRequest -Uri $installScriptUrl -OutFile $tempInstallScript
     $installScript = $tempInstallScript
 }
