@@ -8,6 +8,7 @@
 - `contributions/`：同事提交的原始经验，维护人每周整理
 - `templates/`：投稿模板
 - `scripts/`：安装和更新正式版 skill 的脚本
+- `贡献审核与整合规则.md`：维护人审核投稿和整合正式 skill 的仓库级规则，不属于 skill 本体
 
 ## 协作模型
 
