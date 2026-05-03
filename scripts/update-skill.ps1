@@ -1,5 +1,6 @@
 param(
-    [string]$SkillRoot
+    [string]$SkillRoot,
+    [string[]]$SkillNames
 )
 
 Set-StrictMode -Version Latest
@@ -27,10 +28,16 @@ Invoke-Git -Arguments @("checkout", "main")
 Invoke-Git -Arguments @("pull", "--ff-only", "origin", "main")
 
 if ($SkillRoot) {
-    & powershell -ExecutionPolicy Bypass -File $installScript -SkillRoot $SkillRoot
+    $arguments = @("-ExecutionPolicy", "Bypass", "-File", $installScript, "-SkillRoot", $SkillRoot)
 } else {
-    & powershell -ExecutionPolicy Bypass -File $installScript
+    $arguments = @("-ExecutionPolicy", "Bypass", "-File", $installScript)
 }
+
+if ($SkillNames) {
+    $arguments += @("-SkillNames", $SkillNames)
+}
+
+& powershell @arguments
 
 if ($LASTEXITCODE -ne 0) {
     throw "Install script failed"

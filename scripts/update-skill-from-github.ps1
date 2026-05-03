@@ -1,5 +1,6 @@
 param(
     [string]$SkillRoot,
+    [string[]]$SkillNames,
     [string]$RepoOwner = "Jin080",
     [string]$RepoName = "kingdee-cangqiong-dev-tips",
     [string]$Branch = "main"
@@ -30,6 +31,10 @@ $arguments = @(
 
 if ($SkillRoot) {
     $arguments += @("-SkillRoot", $SkillRoot)
+}
+
+if ($SkillNames) {
+    $arguments += @("-SkillNames", $SkillNames)
 }
 
 & powershell @arguments

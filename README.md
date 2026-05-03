@@ -8,12 +8,23 @@
 - `contributions/`：同事提交的原始经验，维护人每周整理
 - `templates/`：投稿模板
 - `scripts/`：安装和更新正式版 skill 的脚本
+- `corpus/`：heavy skill 语料发布清单和维护说明
 - `贡献审核与整合规则.md`：维护人审核投稿和整合正式 skill 的仓库级规则，不属于 skill 本体
 
 当前正式 skill：
 
 - `skill/kingdee-cangqiong-dev-tips/`：金蝶苍穹 / BOS 开发知识
 - `skill/ai-coding-discipline/`：AI 编码纪律、最小改动、验证闭环、review / debug 过程约束
+- `skill/kingdee-cangqiong-heavy/`：苍穹官方帮助中心重度知识库，回答平台机制、版本边界、官方报错与平台级说明
+- `skill/kingdee-xinghan-heavy/`：星瀚官方帮助中心重度知识库，回答星瀚产品层功能、配置、操作步骤与报错
+- `skill/kingdee-xingkong-heavy/`：星空官方帮助中心重度知识库，回答星空产品层功能、配置、操作步骤与报错
+
+> 注意：
+> 这 3 个官方知识 skill 依赖本地帮助中心语料包，不是纯文本小 skill。
+> 安装后需要按各自 `references/config.md` 把 `BASE_PATH` 改成当前机器上的语料根目录。
+> 仓库更新脚本已经处理为“保留本机已修改过的 config.md”，后续更新不会把本机路径冲回默认示例值。
+> 若要让星瀚 / 星空 skill 具备“写插件时识别表单、字段、按钮标识”的能力，还需要在同一个 `BASE_PATH` 根目录下放入：
+> `星瀚元数据-index.jsonl`、`星空元数据-index.jsonl`
 
 ## 协作模型
 
@@ -64,12 +75,12 @@
 
 普通同事本地只需要安装正式版 skill，不需要 clone 整个仓库。
 
-执行下面命令即可从 GitHub 下载 `main` 分支中的全部正式 skill，并安装到本机 Codex skills 目录：
+执行下面命令即可从 GitHub 下载 `main` 分支中的全部正式 skill，并在需要时自动下载 heavy skill 语料：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -Command "& {
-  $script = Join-Path $env:TEMP 'install-kingdee-skill.ps1'
-  Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/Jin080/kingdee-cangqiong-dev-tips/main/scripts/install-skill-from-github.ps1' -OutFile $script
+  $script = Join-Path $env:TEMP 'install-kingdee-workstation.ps1'
+  Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/Jin080/kingdee-cangqiong-dev-tips/main/scripts/install-workstation-from-github.ps1' -OutFile $script
   & powershell -ExecutionPolicy Bypass -File $script
 }"
 ```
@@ -80,7 +91,46 @@ powershell -ExecutionPolicy Bypass -Command "& {
 C:\Users\你的用户名\.codex\skills\
 ```
 
-脚本会把仓库 `skill/` 目录下的所有正式 skill 同步到这个目录中。
+语料默认安装目录：
+
+```text
+D:\KingdeeDocs
+```
+
+如果目标机器没有 `D:` 盘，则自动改用：
+
+```text
+C:\Users\你的用户名\KingdeeDocs
+```
+
+如果该目录不存在，脚本会自动创建。
+
+脚本会做两件事：
+
+1. 把仓库 `skill/` 目录下的所有正式 skill 同步到本机 Codex skills 目录
+2. 如果本次安装包含 heavy skill，则自动从当前仓库的 GitHub Release 资产下载语料和元数据索引，并回写 3 个 heavy skill 的 `references/config.md`
+
+如果只想安装指定的正式 skill，也可以带 `-SkillNames`。例如只安装：
+
+- `kingdee-cangqiong-heavy`
+- `kingdee-xinghan-heavy`
+
+命令示例：
+
+```powershell
+powershell -ExecutionPolicy Bypass -Command "& {
+  $script = Join-Path $env:TEMP 'install-kingdee-workstation.ps1'
+  Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/Jin080/kingdee-cangqiong-dev-tips/main/scripts/install-workstation-from-github.ps1' -OutFile $script
+  & powershell -ExecutionPolicy Bypass -File $script -SkillNames 'kingdee-cangqiong-heavy','kingdee-xinghan-heavy'
+}"
+```
+
+如果只安装轻量 skill，例如：
+
+- `kingdee-cangqiong-dev-tips`
+- `ai-coding-discipline`
+
+则不会触发 heavy 语料下载。
 
 ## 普通同事：后续更新正式 skill
 
@@ -98,14 +148,109 @@ powershell -ExecutionPolicy Bypass -Command "& {
 
 - `skill/kingdee-cangqiong-dev-tips/`
 - `skill/ai-coding-discipline/`
+- `skill/kingdee-cangqiong-heavy/`
+- `skill/kingdee-xinghan-heavy/`
+- `skill/kingdee-xingkong-heavy/`
 
 不会把下面这些目录安装到 Codex skills 目录：
 
 - `contributions/`
 - `templates/`
+- `corpus/`
 - `README.md`
 
-如果你希望同事直接双击更新，也可以把仓库根目录中的 `更新skill.bat` 发给他们使用。
+后续更新不会重复下载 heavy 语料，只更新 skill 本体。
+
+如果你希望同事直接双击操作：
+
+- 第一次安装可把仓库根目录中的 `安装skill和语料.bat` 发给他们
+- 后续更新可把仓库根目录中的 `更新skill.bat` 发给他们使用
+
+如果只想更新指定 skill，也可以同样带 `-SkillNames`。例如只更新：
+
+- `kingdee-xinghan-heavy`
+- `kingdee-xingkong-heavy`
+
+命令示例：
+
+```powershell
+powershell -ExecutionPolicy Bypass -Command "& {
+  $script = Join-Path $env:TEMP 'update-kingdee-skill.ps1'
+  Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/Jin080/kingdee-cangqiong-dev-tips/main/scripts/update-skill-from-github.ps1' -OutFile $script
+  & powershell -ExecutionPolicy Bypass -File $script -SkillNames 'kingdee-xinghan-heavy','kingdee-xingkong-heavy'
+}"
+```
+
+## 官方知识 skill 的额外前提
+
+下面 3 个 skill 依赖本地外置语料库：
+
+- `skill/kingdee-cangqiong-heavy/`
+- `skill/kingdee-xinghan-heavy/`
+- `skill/kingdee-xingkong-heavy/`
+
+默认情况下，第一次安装脚本会自动尝试补齐这些内容。
+
+如果你不走“第一次安装脚本”，而是手工安装，则请确认两件事：
+
+1. 目标机器上已经有对应的帮助中心全量库
+2. 每个 skill 的 `references/config.md` 中 `BASE_PATH` 已改成该机器的语料根目录
+
+例如，如果某台机器把语料放在：
+
+```text
+E:\AI\kingdee-docs
+```
+
+且其下存在：
+
+- `E:\AI\kingdee-docs\苍穹帮助中心全量库`
+- `E:\AI\kingdee-docs\星瀚帮助中心全量库`
+- `E:\AI\kingdee-docs\星空帮助中心全量库`
+- `E:\AI\kingdee-docs\星瀚元数据-index.jsonl`
+- `E:\AI\kingdee-docs\星空元数据-index.jsonl`
+
+那么应把这 3 个 skill 的 `BASE_PATH` 都改成：
+
+```text
+E:\AI\kingdee-docs
+```
+
+如果希望让同事手工指定语料安装目录，并自动回写这 3 个 heavy skill 的 `BASE_PATH`，可以使用：
+
+```powershell
+powershell -ExecutionPolicy Bypass -Command "& {
+  $script = Join-Path $env:TEMP 'install-kingdee-corpus.ps1'
+  Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/Jin080/kingdee-cangqiong-dev-tips/main/scripts/install-corpus-from-github.ps1' -OutFile $script
+  & powershell -ExecutionPolicy Bypass -File $script -SourceRoot 'D:\已解压的语料包根目录' -CorpusRoot 'E:\AI\kingdee-docs'
+}"
+```
+
+说明：
+
+- `SourceRoot`：语料包当前所在根目录，目录下应直接包含三套语料目录
+- 同时还应直接包含：
+  - `星瀚元数据-index.jsonl`
+  - `星空元数据-index.jsonl`
+- `CorpusRoot`：同事自己想放语料的目标根目录
+- 脚本完成后会自动复制三套帮助中心语料目录和两个元数据索引，并把三个 heavy skill 的 `references/config.md` 写成这个 `CorpusRoot`
+
+如果语料已经提前放好，只想回写 `BASE_PATH`，可以省略 `SourceRoot`：
+
+```powershell
+powershell -ExecutionPolicy Bypass -Command "& {
+  $script = Join-Path $env:TEMP 'install-kingdee-corpus.ps1'
+  Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/Jin080/kingdee-cangqiong-dev-tips/main/scripts/install-corpus-from-github.ps1' -OutFile $script
+  & powershell -ExecutionPolicy Bypass -File $script -CorpusRoot 'E:\AI\kingdee-docs'
+}"
+```
+
+维护人需注意：
+
+- 仓库本体不直接保存数 GB 语料
+- heavy 语料通过当前仓库的 GitHub Release 资产分发
+- 发布清单见 `corpus/release-manifest.json`
+- 维护说明见 `corpus/README.md`
 
 ## 投稿目录规范
 
