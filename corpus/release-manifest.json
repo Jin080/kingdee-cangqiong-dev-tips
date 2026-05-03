@@ -1,0 +1,30 @@
+{
+  "release_tag": "heavy-corpus-v1",
+  "assets": [
+    {
+      "name": "cangqiong-help-center.zip",
+      "kind": "zip",
+      "expanded_name": "苍穹帮助中心全量库"
+    },
+    {
+      "name": "xinghan-help-center.zip",
+      "kind": "zip",
+      "expanded_name": "星瀚帮助中心全量库"
+    },
+    {
+      "name": "xingkong-help-center.zip",
+      "kind": "zip",
+      "expanded_name": "星空帮助中心全量库"
+    },
+    {
+      "name": "xinghan-metadata-index.jsonl",
+      "kind": "file",
+      "target_name": "星瀚元数据-index.jsonl"
+    },
+    {
+      "name": "xingkong-metadata-index.jsonl",
+      "kind": "file",
+      "target_name": "星空元数据-index.jsonl"
+    }
+  ]
+}

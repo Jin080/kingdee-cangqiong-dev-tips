@@ -1,0 +1,216 @@
+param(
+    [string]$SourceRoot,
+    [string]$CorpusRoot,
+    [string]$SkillRoot,
+    [string]$RepoOwner = "Jin080",
+    [string]$RepoName = "kingdee-cangqiong-dev-tips",
+    [string]$Branch = "main",
+    [string]$ManifestPath = "corpus/release-manifest.json"
+)
+
+Set-StrictMode -Version Latest
+$ErrorActionPreference = "Stop"
+
+function Get-DefaultCorpusRoot {
+    $preferredDrive = "D:\"
+    if (Test-Path -LiteralPath $preferredDrive -PathType Container) {
+        return [System.IO.Path]::GetFullPath((Join-Path $preferredDrive "KingdeeDocs"))
+    }
+
+    return [System.IO.Path]::GetFullPath((Join-Path $env:USERPROFILE "KingdeeDocs"))
+}
+
+function Get-ResolvedCorpusRoot {
+    param([string]$OverrideRoot)
+
+    if ($OverrideRoot) {
+        return [System.IO.Path]::GetFullPath($OverrideRoot)
+    }
+
+    return Get-DefaultCorpusRoot
+}
+
+function Get-RequiredCorpusNames {
+    return @(
+        "苍穹帮助中心全量库",
+        "星瀚帮助中心全量库",
+        "星空帮助中心全量库"
+    )
+}
+
+function Get-RequiredMetadataIndexNames {
+    return @(
+        "星瀚元数据-index.jsonl",
+        "星空元数据-index.jsonl"
+    )
+}
+
+function Test-CorpusLayout {
+    param([string]$RootPath)
+
+    foreach ($name in (Get-RequiredCorpusNames)) {
+        if (-not (Test-Path -LiteralPath (Join-Path $RootPath $name) -PathType Container)) {
+            return $false
+        }
+    }
+
+    foreach ($name in (Get-RequiredMetadataIndexNames)) {
+        if (-not (Test-Path -LiteralPath (Join-Path $RootPath $name) -PathType Leaf)) {
+            return $false
+        }
+    }
+
+    return $true
+}
+
+function Get-ManifestUrl {
+    param(
+        [string]$Owner,
+        [string]$Name,
+        [string]$TargetBranch,
+        [string]$RelativePath
+    )
+
+    $cacheBust = [System.Guid]::NewGuid().ToString("N")
+    return "https://raw.githubusercontent.com/$Owner/$Name/$TargetBranch/$RelativePath?cacheBust=$cacheBust"
+}
+
+function Get-ReleaseTagApiUrl {
+    param(
+        [string]$Owner,
+        [string]$Name,
+        [string]$ReleaseTag
+    )
+
+    return "https://api.github.com/repos/$Owner/$Name/releases/tags/$ReleaseTag"
+}
+
+function Get-SingleExpandedDirectory {
+    param(
+        [string]$ExtractRoot,
+        [string]$ExpandedName
+    )
+
+    $expectedPath = Join-Path $ExtractRoot $ExpandedName
+    if (Test-Path -LiteralPath $expectedPath -PathType Container) {
+        return $expectedPath
+    }
+
+    $directories = Get-ChildItem -LiteralPath $ExtractRoot -Directory
+    if ($directories.Count -ne 1) {
+        throw "Release asset unzip result is ambiguous. Expected directory [$ExpandedName] under $ExtractRoot"
+    }
+
+    return $directories[0].FullName
+}
+
+function Stage-ReleaseAssets {
+    param(
+        [pscustomobject]$Manifest,
+        [string]$Owner,
+        [string]$Name,
+        [string]$TempSourceRoot,
+        [string]$TempDownloadRoot
+    )
+
+    $headers = @{
+        "Accept" = "application/vnd.github+json"
+        "User-Agent" = "kingdee-corpus-installer"
+    }
+
+    $release = Invoke-RestMethod -Headers $headers -Uri (Get-ReleaseTagApiUrl -Owner $Owner -Name $Name -ReleaseTag $Manifest.release_tag)
+
+    foreach ($assetSpec in $Manifest.assets) {
+        $asset = $release.assets | Where-Object { $_.name -eq $assetSpec.name } | Select-Object -First 1
+        if (-not $asset) {
+            throw "Release [$($Manifest.release_tag)] is missing asset: $($assetSpec.name)"
+        }
+
+        $downloadPath = Join-Path $TempDownloadRoot $assetSpec.name
+        Write-Host "Downloading release asset: $($assetSpec.name)"
+        Invoke-WebRequest -Headers @{ "User-Agent" = "kingdee-corpus-installer" } -Uri $asset.browser_download_url -OutFile $downloadPath
+
+        if ($assetSpec.kind -eq "zip") {
+            $extractRoot = Join-Path $TempDownloadRoot ([System.Guid]::NewGuid().ToString("N"))
+            Expand-Archive -LiteralPath $downloadPath -DestinationPath $extractRoot -Force
+
+            $expandedSource = Get-SingleExpandedDirectory -ExtractRoot $extractRoot -ExpandedName $assetSpec.expanded_name
+            $stagedTarget = Join-Path $TempSourceRoot $assetSpec.expanded_name
+
+            if (Test-Path -LiteralPath $stagedTarget) {
+                Remove-Item -LiteralPath $stagedTarget -Recurse -Force
+            }
+
+            New-Item -ItemType Directory -Force -Path $stagedTarget | Out-Null
+            Get-ChildItem -LiteralPath $expandedSource -Force | ForEach-Object {
+                Copy-Item -LiteralPath $_.FullName -Destination $stagedTarget -Recurse -Force
+            }
+
+            continue
+        }
+
+        if ($assetSpec.kind -eq "file") {
+            $targetName = $assetSpec.target_name
+            Copy-Item -LiteralPath $downloadPath -Destination (Join-Path $TempSourceRoot $targetName) -Force
+            continue
+        }
+
+        throw "Unsupported asset kind in manifest: $($assetSpec.kind)"
+    }
+}
+
+$resolvedCorpusRoot = Get-ResolvedCorpusRoot -OverrideRoot $CorpusRoot
+$tempScript = Join-Path $env:TEMP ("install-corpus-" + [System.Guid]::NewGuid().ToString("N") + ".ps1")
+$tempRoot = Join-Path $env:TEMP ("install-corpus-assets-" + [System.Guid]::NewGuid().ToString("N"))
+$scriptUrl = "https://raw.githubusercontent.com/$RepoOwner/$RepoName/$Branch/scripts/install-corpus.ps1?cacheBust=$([System.Guid]::NewGuid().ToString('N'))"
+$resolvedSourceRoot = $null
+
+try {
+    Invoke-WebRequest -Uri $scriptUrl -OutFile $tempScript
+    New-Item -ItemType Directory -Force -Path $tempRoot | Out-Null
+
+    if ($SourceRoot) {
+        $resolvedSourceRoot = [System.IO.Path]::GetFullPath($SourceRoot)
+    } elseif (-not (Test-CorpusLayout -RootPath $resolvedCorpusRoot)) {
+        $manifestUrl = Get-ManifestUrl -Owner $RepoOwner -Name $RepoName -TargetBranch $Branch -RelativePath $ManifestPath
+        $manifest = Invoke-RestMethod -Uri $manifestUrl
+
+        $tempSourceRoot = Join-Path $tempRoot "source"
+        $tempDownloadRoot = Join-Path $tempRoot "downloads"
+        New-Item -ItemType Directory -Force -Path $tempSourceRoot | Out-Null
+        New-Item -ItemType Directory -Force -Path $tempDownloadRoot | Out-Null
+
+        Stage-ReleaseAssets -Manifest $manifest -Owner $RepoOwner -Name $RepoName -TempSourceRoot $tempSourceRoot -TempDownloadRoot $tempDownloadRoot
+        $resolvedSourceRoot = $tempSourceRoot
+    } else {
+        Write-Host "Corpus already exists at $resolvedCorpusRoot, skip release download."
+    }
+
+    $arguments = @(
+        "-ExecutionPolicy", "Bypass",
+        "-File", $tempScript,
+        "-CorpusRoot", $resolvedCorpusRoot
+    )
+
+    if ($resolvedSourceRoot) {
+        $arguments += @("-SourceRoot", $resolvedSourceRoot)
+    }
+
+    if ($SkillRoot) {
+        $arguments += @("-SkillRoot", $SkillRoot)
+    }
+
+    & powershell @arguments
+
+    if ($LASTEXITCODE -ne 0) {
+        throw "Corpus install script failed"
+    }
+}
+finally {
+    if (Test-Path -LiteralPath $tempScript) {
+        Remove-Item -Force -LiteralPath $tempScript
+    }
+    if (Test-Path -LiteralPath $tempRoot) {
+        Remove-Item -Recurse -Force -LiteralPath $tempRoot
+    }
+}
