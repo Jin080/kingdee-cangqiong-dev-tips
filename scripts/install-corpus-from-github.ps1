@@ -85,25 +85,6 @@ function Get-ReleaseTagApiUrl {
     return "https://api.github.com/repos/$Owner/$Name/releases/tags/$ReleaseTag"
 }
 
-function Get-SingleExpandedDirectory {
-    param(
-        [string]$ExtractRoot,
-        [string]$ExpandedName
-    )
-
-    $expectedPath = Join-Path $ExtractRoot $ExpandedName
-    if (Test-Path -LiteralPath $expectedPath -PathType Container) {
-        return $expectedPath
-    }
-
-    $directories = Get-ChildItem -LiteralPath $ExtractRoot -Directory
-    if ($directories.Count -ne 1) {
-        throw "Release asset unzip result is ambiguous. Expected directory [$ExpandedName] under $ExtractRoot"
-    }
-
-    return $directories[0].FullName
-}
-
 function Invoke-DownloadFile {
     param(
         [string]$Url,
@@ -152,7 +133,7 @@ function Stage-ReleaseAssets {
         [pscustomobject]$Manifest,
         [string]$Owner,
         [string]$Name,
-        [string]$TempSourceRoot,
+        [string]$InstallRoot,
         [string]$TempDownloadRoot
     )
 
@@ -173,27 +154,20 @@ function Stage-ReleaseAssets {
         Invoke-DownloadFile -Url $asset.browser_download_url -OutFile $downloadPath -Label $assetSpec.name
 
         if ($assetSpec.kind -eq "zip") {
-            $extractRoot = Join-Path $TempDownloadRoot ([System.Guid]::NewGuid().ToString("N"))
-            Expand-Archive -LiteralPath $downloadPath -DestinationPath $extractRoot -Force
-
-            $expandedSource = Get-SingleExpandedDirectory -ExtractRoot $extractRoot -ExpandedName $assetSpec.expanded_name
-            $stagedTarget = Join-Path $TempSourceRoot $assetSpec.expanded_name
-
-            if (Test-Path -LiteralPath $stagedTarget) {
-                Remove-Item -LiteralPath $stagedTarget -Recurse -Force
+            $installedTarget = Join-Path $InstallRoot $assetSpec.expanded_name
+            if (Test-Path -LiteralPath $installedTarget) {
+                Remove-Item -LiteralPath $installedTarget -Recurse -Force
             }
 
-            New-Item -ItemType Directory -Force -Path $stagedTarget | Out-Null
-            Get-ChildItem -LiteralPath $expandedSource -Force | ForEach-Object {
-                Copy-Item -LiteralPath $_.FullName -Destination $stagedTarget -Recurse -Force
-            }
+            New-Item -ItemType Directory -Force -Path $InstallRoot | Out-Null
+            Expand-Archive -LiteralPath $downloadPath -DestinationPath $InstallRoot -Force
 
             continue
         }
 
         if ($assetSpec.kind -eq "file") {
             $targetName = $assetSpec.target_name
-            Copy-Item -LiteralPath $downloadPath -Destination (Join-Path $TempSourceRoot $targetName) -Force
+            Copy-Item -LiteralPath $downloadPath -Destination (Join-Path $InstallRoot $targetName) -Force
             continue
         }
 
@@ -217,13 +191,10 @@ try {
         $manifestUrl = Get-ManifestUrl -Owner $RepoOwner -Name $RepoName -TargetBranch $Branch -RelativePath $ManifestPath
         $manifest = Invoke-RestMethod -Uri $manifestUrl
 
-        $tempSourceRoot = Join-Path $tempRoot "source"
         $tempDownloadRoot = Join-Path $tempRoot "downloads"
-        New-Item -ItemType Directory -Force -Path $tempSourceRoot | Out-Null
         New-Item -ItemType Directory -Force -Path $tempDownloadRoot | Out-Null
 
-        Stage-ReleaseAssets -Manifest $manifest -Owner $RepoOwner -Name $RepoName -TempSourceRoot $tempSourceRoot -TempDownloadRoot $tempDownloadRoot
-        $resolvedSourceRoot = $tempSourceRoot
+        Stage-ReleaseAssets -Manifest $manifest -Owner $RepoOwner -Name $RepoName -InstallRoot $resolvedCorpusRoot -TempDownloadRoot $tempDownloadRoot
     } else {
         Write-Host "Corpus already exists at $resolvedCorpusRoot, skip release download."
     }
