@@ -11,6 +11,49 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
+function Invoke-DownloadFile {
+    param(
+        [string]$Url,
+        [string]$OutFile,
+        [string]$Label,
+        [int]$MaxAttempts = 3
+    )
+
+    $attempt = 1
+    while ($attempt -le $MaxAttempts) {
+        try {
+            Write-Host ("Downloading {0} (attempt {1}/{2})" -f $Label, $attempt, $MaxAttempts)
+
+            if (Get-Command curl.exe -ErrorAction SilentlyContinue) {
+                & curl.exe -L --fail --retry 3 --retry-delay 2 --connect-timeout 30 --output $OutFile $Url
+                if ($LASTEXITCODE -ne 0) {
+                    throw "curl exited with code $LASTEXITCODE"
+                }
+            } else {
+                Invoke-WebRequest -Headers @{ "User-Agent" = "kingdee-skill-installer" } -Uri $Url -OutFile $OutFile -TimeoutSec 600
+            }
+
+            if (-not (Test-Path -LiteralPath $OutFile -PathType Leaf)) {
+                throw "Download did not produce file: $OutFile"
+            }
+
+            return
+        }
+        catch {
+            if (Test-Path -LiteralPath $OutFile) {
+                Remove-Item -LiteralPath $OutFile -Force
+            }
+
+            if ($attempt -ge $MaxAttempts) {
+                throw ("Failed to download {0}: {1}" -f $Label, $_.Exception.Message)
+            }
+
+            Start-Sleep -Seconds (2 * $attempt)
+            $attempt++
+        }
+    }
+}
+
 function Normalize-SkillNames {
     param([string[]]$Names)
 
@@ -52,13 +95,13 @@ $tempInstallCorpusScript = $null
 
 if (-not (Test-Path -LiteralPath $installSkillScript)) {
     $tempInstallSkillScript = Join-Path $env:TEMP ("install-skill-from-github-" + [System.Guid]::NewGuid().ToString("N") + ".ps1")
-    Invoke-WebRequest -Uri ("https://raw.githubusercontent.com/$RepoOwner/$RepoName/$Branch/scripts/install-skill-from-github.ps1?cacheBust=$([System.Guid]::NewGuid().ToString('N'))") -OutFile $tempInstallSkillScript
+    Invoke-DownloadFile -Url ("https://raw.githubusercontent.com/$RepoOwner/$RepoName/$Branch/scripts/install-skill-from-github.ps1?cacheBust=$([System.Guid]::NewGuid().ToString('N'))") -OutFile $tempInstallSkillScript -Label "install-skill-from-github.ps1"
     $installSkillScript = $tempInstallSkillScript
 }
 
 if (-not (Test-Path -LiteralPath $installCorpusScript)) {
     $tempInstallCorpusScript = Join-Path $env:TEMP ("install-corpus-from-github-" + [System.Guid]::NewGuid().ToString("N") + ".ps1")
-    Invoke-WebRequest -Uri ("https://raw.githubusercontent.com/$RepoOwner/$RepoName/$Branch/scripts/install-corpus-from-github.ps1?cacheBust=$([System.Guid]::NewGuid().ToString('N'))") -OutFile $tempInstallCorpusScript
+    Invoke-DownloadFile -Url ("https://raw.githubusercontent.com/$RepoOwner/$RepoName/$Branch/scripts/install-corpus-from-github.ps1?cacheBust=$([System.Guid]::NewGuid().ToString('N'))") -OutFile $tempInstallCorpusScript -Label "install-corpus-from-github.ps1"
     $installCorpusScript = $tempInstallCorpusScript
 }
 
