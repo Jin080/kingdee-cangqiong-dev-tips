@@ -1,9 +1,6 @@
 param(
     [string]$SkillRoot,
-    [string[]]$SkillNames,
-    [string]$RepoOwner = "Jin080",
-    [string]$RepoName = "kingdee-cangqiong-dev-tips",
-    [string]$Branch = "main"
+    [string[]]$SkillNames
 )
 
 Set-StrictMode -Version Latest
@@ -120,36 +117,7 @@ function Sync-SkillDirectories {
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = Split-Path -Parent $scriptDir
-$localSourceSkillRoot = Join-Path $repoRoot "skill"
+$sourceSkillRoot = Join-Path $repoRoot "skill"
 
 $resolvedSkillRoot = Get-ResolvedSkillRoot -OverrideRoot $SkillRoot
-
-if (Test-Path -LiteralPath $localSourceSkillRoot -PathType Container) {
-    Write-Host "Using local skill source: $localSourceSkillRoot"
-    Sync-SkillDirectories -SourceRoot $localSourceSkillRoot -ResolvedSkillRoot $resolvedSkillRoot -SelectedSkillNames $SkillNames
-    return
-}
-
-$zipUrl = "https://github.com/$RepoOwner/$RepoName/archive/refs/heads/$Branch.zip"
-$tempRoot = Join-Path $env:TEMP ("codex-skill-install-" + [System.Guid]::NewGuid().ToString("N"))
-$zipPath = Join-Path $tempRoot "repo.zip"
-$extractRoot = Join-Path $tempRoot "repo"
-
-New-Item -ItemType Directory -Force -Path $tempRoot | Out-Null
-
-try {
-    Write-Host "Downloading $zipUrl"
-    Invoke-WebRequest -Uri $zipUrl -OutFile $zipPath
-
-    Expand-Archive -LiteralPath $zipPath -DestinationPath $extractRoot -Force
-
-    $repoSnapshotRoot = Join-Path $extractRoot "$RepoName-$Branch"
-    $sourceSkillRoot = Join-Path $repoSnapshotRoot "skill"
-
-    Sync-SkillDirectories -SourceRoot $sourceSkillRoot -ResolvedSkillRoot $resolvedSkillRoot -SelectedSkillNames $SkillNames
-}
-finally {
-    if (Test-Path -LiteralPath $tempRoot) {
-        Remove-Item -Recurse -Force -LiteralPath $tempRoot
-    }
-}
+Sync-SkillDirectories -SourceRoot $sourceSkillRoot -ResolvedSkillRoot $resolvedSkillRoot -SelectedSkillNames $SkillNames

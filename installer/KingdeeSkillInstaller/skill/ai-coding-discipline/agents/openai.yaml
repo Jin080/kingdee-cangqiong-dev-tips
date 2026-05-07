@@ -1,0 +1,4 @@
+interface:
+  display_name: "AI 编码纪律"
+  short_description: "用于修 bug、重构、debug 与 review 的过程型技能，强调先列假设、控范围、补验证。"
+  default_prompt: "当用户要求最小改动、先分析后编码、不要动无关代码、补验证结果或做 review/debug 时，先明确假设和边界，再把任务改写成带验证点的最小实现路径，最后只做手术式改动并报告实际验证结果。"
