@@ -163,8 +163,19 @@ powershell -ExecutionPolicy Bypass -Command "& {
 
 如果你希望同事直接双击操作：
 
-- 第一次安装可把仓库根目录中的 `安装skill和语料.bat` 发给他们
-- 后续更新可把仓库根目录中的 `更新skill.bat` 发给他们使用
+- 推荐发给同事的是一个完整安装包目录，而不是只发单个 `.bat`
+- 安装包目录至少包含：
+  - `安装skill和语料.bat`
+  - `更新skill.bat`
+  - `scripts/`
+- 第一次安装双击 `安装skill和语料.bat`
+- 后续更新双击 `更新skill.bat`
+
+这样更稳定，因为：
+
+- `.bat` 会优先直接调用同目录 `scripts\*.ps1`
+- 少一层“先去 GitHub 拉临时脚本再执行”的不稳定链路
+- 只有同目录 `scripts/` 缺失时，才会回退到 GitHub bootstrap 模式
 
 如果只想更新指定 skill，也可以同样带 `-SkillNames`。例如只更新：
 
