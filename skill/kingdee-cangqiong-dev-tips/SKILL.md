@@ -1,6 +1,6 @@
 ---
 name: kingdee-cangqiong-dev-tips
-description: Use when Codex needs to answer, design, or implement Kingdee Cangqiong / BOS development tasks such as 苍穹开发, BOS 插件, 表单或列表页面取值/赋值, 单据体或子单据体处理, 父子页面交互, F7 选择界面, DynamicObject 数据处理, SaveServiceHelper, BusinessDataServiceHelper, QueryServiceHelper, OperationServiceHelper, or 界面插件与操作插件传参.
+description: 当开发者需要编写或实现金蝶 BOS 平台代码时触发，适用于苍穹、星瀚、星空所有产品的二开场景：表单插件、列表插件、操作插件、单据转换插件的代码编写；DynamicObject 数据操作；QueryServiceHelper、SaveServiceHelper、BusinessDataServiceHelper、OperationServiceHelper 的用法；表单取值赋值、单据体/子单据体操作、F7 选择界面、父子页面通信、propertyChanged、afterBindData、invokeOperation、updateView 事件处理。当问题是"怎么写代码"、"怎么实现"、"代码报错怎么改"时触发。
 ---
 
 # 金蝶苍穹开发速查

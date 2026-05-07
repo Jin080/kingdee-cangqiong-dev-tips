@@ -34,7 +34,7 @@ if ($SkillRoot) {
 }
 
 if ($SkillNames) {
-    $arguments += @("-SkillNames", $SkillNames)
+    $arguments += @("-SkillNames", ($SkillNames -join ","))
 }
 
 & powershell @arguments

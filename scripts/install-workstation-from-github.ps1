@@ -76,7 +76,7 @@ try {
     }
 
     if ($SkillNames) {
-        $skillArguments += @("-SkillNames", $SkillNames)
+        $skillArguments += @("-SkillNames", ($SkillNames -join ","))
     }
 
     & powershell @skillArguments

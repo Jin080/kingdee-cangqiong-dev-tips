@@ -300,6 +300,29 @@ contributions/2026-04-30/save-plugin.md
 4. 发起 PR 合并到 `main`
 5. 通知团队执行更新命令
 
+### 维护人：发布前一键校验
+
+在准备发版前，先在仓库根目录运行：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\verify-release.ps1
+```
+
+这个入口会用临时目录做最小可执行校验，重点覆盖当前发布最容易回归的几项：
+
+1. 指定 `-SkillNames` 时只安装被选中的正式 skill
+2. heavy skill 语料安装后，三份 `references/config.md` 会回写到目标 `CorpusRoot`
+3. 走更新/重装路径时，本机已改过的 `references/config.md` 会被保留
+4. 典型失败场景仍然能给出明确诊断，而不是只报脚本失败
+
+如果你想保留校验现场排查问题，可加：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\verify-release.ps1 -KeepWorkRoot
+```
+
+脚本成功时默认自动清理临时目录；失败时会自动保留现场并输出对应路径。
+
 ## 为什么不要让普通同事直接改正式 skill
 
 因为投稿文档和正式 skill 不是同一种东西。
