@@ -99,6 +99,32 @@ function Get-ReleaseTagApiUrl {
     return "https://api.github.com/repos/$Owner/$Name/releases/tags/$ReleaseTag"
 }
 
+function ConvertTo-ManifestObject {
+    param(
+        [Parameter(Mandatory = $true)]
+        $InputObject,
+        [string]$SourceLabel = "manifest"
+    )
+
+    $manifestObject = $InputObject
+
+    if ($manifestObject -is [string]) {
+        $jsonText = $manifestObject.TrimStart([char]0xFEFF)
+        if ([string]::IsNullOrWhiteSpace($jsonText)) {
+            throw "$SourceLabel is empty."
+        }
+
+        $manifestObject = $jsonText | ConvertFrom-Json
+    }
+
+    $propertyNames = @($manifestObject.PSObject.Properties.Name)
+    if (('release_tag' -notin $propertyNames) -or ('assets' -notin $propertyNames)) {
+        throw "$SourceLabel does not contain required fields: release_tag, assets"
+    }
+
+    return $manifestObject
+}
+
 function Invoke-DownloadFile {
     param(
         [string]$Url,
@@ -216,10 +242,10 @@ try {
     } elseif (-not (Test-CorpusLayout -RootPath $resolvedCorpusRoot)) {
         if ($localManifestPath -and (Test-Path -LiteralPath $localManifestPath -PathType Leaf)) {
             Write-Host "Using local release manifest: $localManifestPath"
-            $manifest = Get-Content -LiteralPath $localManifestPath -Raw | ConvertFrom-Json
+            $manifest = ConvertTo-ManifestObject -InputObject (Get-Content -LiteralPath $localManifestPath -Raw) -SourceLabel $localManifestPath
         } else {
             $manifestUrl = Get-ManifestUrl -Owner $RepoOwner -Name $RepoName -TargetBranch $Branch -RelativePath $ManifestPath
-            $manifest = Invoke-RestMethod -Uri $manifestUrl
+            $manifest = ConvertTo-ManifestObject -InputObject (Invoke-RestMethod -Uri $manifestUrl) -SourceLabel $manifestUrl
         }
 
         $tempDownloadRoot = Join-Path $tempRoot "downloads"
