@@ -277,10 +277,10 @@ try {
     }
 }
 finally {
-    if (Test-Path -LiteralPath $tempScript) {
+    if ($tempScript -and (Test-Path -LiteralPath $tempScript)) {
         Remove-Item -Force -LiteralPath $tempScript
     }
-    if (Test-Path -LiteralPath $tempRoot) {
+    if ($tempRoot -and (Test-Path -LiteralPath $tempRoot)) {
         Remove-Item -Recurse -Force -LiteralPath $tempRoot
     }
 }
