@@ -8,6 +8,7 @@
 - 用户要求编写星空表单插件、操作插件、服务端插件
 - 用户要求确认某个页面/单据/列表的表单标识（form_id）
 - 用户要求确认字段标识、按钮标识、单据体标识
+- 用户要求区分字段 `Key`、`PropertyName`、`FieldName`
 - 用户给出业务页面名称，需要确认 BOS 元数据里的 key
 
 不适用场景（走 reading-guide.md 的帮助中心链路）：
@@ -36,7 +37,13 @@
 {
   "form_id": "表单标识（如 STK_TRANSFERIN）",
   "model_type": "模型类型（如 BOS_BillModel / BOS_BaseDataModel）",
-  "fields": [{"key": "字段标识", "name": "字段名称"}],
+  "fields": [{
+    "key": "字段唯一标识（view / 控件层）",
+    "name": "字段名称",
+    "property_name": "ORM / model 实体属性",
+    "field_name": "数据库字段名或底层字段名",
+    "entity_key": "所属单据体标识（有则返回）"
+  }],
   "buttons": [{"key": "按钮标识", "name": "按钮名称"}],
   "entries": [{"key": "单据体标识", "name": "单据体名称"}],
   "plugins": ["已注册插件类名1", "已注册插件类名2"]
@@ -67,7 +74,9 @@
 | 开发需求 | 取哪个字段 |
 |---------|-----------|
 | 注册插件时的表单标识 | `form_id` |
-| 字段取值 / 赋值 | `fields[].key` |
+| 控件事件、updateView、前端字段定位 | `fields[].key` |
+| 元数据取数、DynamicObject / model 属性定位 | `fields[].property_name` |
+| 数据库字段排查、底层字段映射 | `fields[].field_name` |
 | 按钮点击事件 | `buttons[].key` |
 | 单据体操作 | `entries[].key` |
 | 参考现有插件实现 | `plugins[]` |
@@ -80,6 +89,8 @@
 ```
 表单标识：{form_id}
 目标字段：{key}（{name}）
+实体属性：{property_name}
+数据库字段：{field_name}
 相关按钮：{key}（{name}）
 单据体：{key}（{name}）
 ```
